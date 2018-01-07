@@ -6,38 +6,103 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
+import java.math.RoundingMode;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 
 public class JsonParser {
 
-    static String pathnameBTC = "data/ex_bateau_btc86h.json";
-    static String pathnameRIPL = "data/ex_bateau_xrp86h.json";
-    static String pathnameETH = "data/ex_bateau_eth86h.json";
+
+    //https://quantquote.com/historical-stock-data
+
+
+    //java CNN on mnist (0-9 symbols reco)
+    //    https://github.com/BigPeng/JavaCNN
+
+
+    double minBTC = 1000.0f;
+    double maxBTC = 25000.0f;
+
+    public static String pathnameBTC = "data/ex_bateau_btc86h.json";
+
+    //        todo :
+    //        1) ping url avec fenetre qui se deplace dans le passé pour ajuter des lignes dans les tendances
+    //        2) ouv + close + min + max + volume + diff mme + diff bollinger  par heure
 
     public static void main(String [] args) throws IOException, ParseException {
         JsonParser jsonParser = new JsonParser();
 
-        Currency btc = jsonParser.extractJson(pathnameBTC, "BTC");
-        Currency ripple = jsonParser.extractJson(pathnameRIPL, "RIPL");
-        Currency eth = jsonParser.extractJson(pathnameETH, "ETH");
+        JsonParser.emptyFile("data/tendancesInput.txt");
+        JsonParser.emptyFile("data/tendancesOutput.txt");
+        jsonParser.write1LineInTendances();
 
-//        System.out.println(btc);
-//        System.out.println(ripple);
-//        System.out.println(eth);
-
-        List<Currency> targetTimestamps= jsonParser.getTripletForTimestamp(btc ,ripple , eth, 1514746800);
-        System.out.println(targetTimestamps);
     }
 
-    private  List<Currency> getTripletForTimestamp(Currency btc, Currency ripple, Currency eth, long timestamp) {
-        List<Currency> filteredCurrencys = new ArrayList<>();
-        filteredCurrencys.add( btc.getHourForTimestamp(timestamp));
-        filteredCurrencys.add( ripple.getHourForTimestamp(timestamp));
-        filteredCurrencys.add( eth.getHourForTimestamp(timestamp));
-        return filteredCurrencys;
+    public void write1LineInTendances() throws IOException, ParseException {
+        Currency btc = extractJson(pathnameBTC, "BTC");
+
+        //met les 85 derniers close dans input.txt
+        String inputValues="";
+        for(int i =0; i < 85; i++){
+            if(i < 84) {
+                inputValues += normalise(btc.hours.get(i).close) + ",";
+            } else {
+                inputValues += normalise(btc.hours.get(i).close);
+            }
+        }
+        writeToFile(inputValues, "data/tendancesInput.txt");
+
+        // met 0 ou 1 dans output.txt selon diff entre drnier et avant dernier
+        int sensOutput;
+        if(btc.hours.get(84).close > btc.hours.get(85).close) {
+            //0 baisse
+            sensOutput = 0;
+        } else {
+            //1 hausse
+            sensOutput = 1;
+        }
+
+        writeToFile(sensOutput + "", "data/tendancesOutput.txt");
+    }
+
+
+    private String normalise(double close) {
+        double diff = maxBTC - minBTC;
+        double res= (close - minBTC) / diff;
+        res = (res * 2) - 1;
+        return arrondi5Dec(res) + "";
+    }
+
+    private double arrondi5Dec(double res) {
+        DecimalFormat df = new DecimalFormat("#.#####");
+        df.setRoundingMode(RoundingMode.HALF_UP);
+        return Double.parseDouble(df.format(res).replaceAll(",","."));
+    }
+
+    public static void writeToFile(String msg, String path)  {
+        try {
+            FileWriter fw = new FileWriter(path,true);
+            BufferedWriter bw = new BufferedWriter(fw);
+            bw.write(msg+"\n");
+            bw.close();
+            fw.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void emptyFile(String path) {
+        try {
+            FileWriter fw = new FileWriter(path,false);
+            BufferedWriter bw = new BufferedWriter(fw);
+            bw.write("");
+            bw.close();
+            fw.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private Currency  extractJson(String pathname, String name) throws IOException, ParseException {
