@@ -1,4 +1,4 @@
-package com.jlmd.simpleneuralnetwork.model;
+package com.jlmd.simpleneuralnetwork.only_prix.model;
 
 public class Hour {
 

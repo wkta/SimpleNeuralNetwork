@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -31,7 +32,24 @@ public class DataUtils {
             e.printStackTrace();
         }
 
-       return fArray;
+        return fArray;
+    }
+
+    public static List<float[]> readInputsListFromFile(String fileURI){
+        List<float[]>fArray = new ArrayList<>();
+
+        List<String> lines = null;
+        try {
+            lines = Files.readAllLines(Paths.get(fileURI), StandardCharsets.UTF_8);
+
+            for(int i = 0; i<lines.size(); i++){
+                fArray.add(convertStringArrayToFloatArray(lines.get(i).split(",")));
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return fArray;
     }
 
     /**

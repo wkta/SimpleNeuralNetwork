@@ -1,4 +1,4 @@
-package com.jlmd.simpleneuralnetwork.example;
+package com.jlmd.simpleneuralnetwork.only_prix;
 
 import com.jlmd.simpleneuralnetwork.neuralnetwork.NeuralNetwork;
 import com.jlmd.simpleneuralnetwork.neuralnetwork.callback.INeuralNetworkCallback;

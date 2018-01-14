@@ -1,4 +1,4 @@
-package com.jlmd.simpleneuralnetwork.model;
+package com.jlmd.simpleneuralnetwork.only_prix.model;
 
 import java.util.ArrayList;
 import java.util.List;

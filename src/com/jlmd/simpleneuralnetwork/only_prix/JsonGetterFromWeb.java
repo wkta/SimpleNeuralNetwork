@@ -1,4 +1,4 @@
-package com.jlmd.simpleneuralnetwork;
+package com.jlmd.simpleneuralnetwork.only_prix;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -9,7 +9,7 @@ import org.json.simple.parser.ParseException;
 
 import java.io.IOException;
 
-public class JsonGetter {
+public class JsonGetterFromWeb {
 
     //https://min-api.cryptocompare.com/data/histohour?aggregate=1&e=KRAKEN&extraParams=CryptoCompare&fsym=XRP&limit=96
     // &tryConversion=false&tsym=EUR&toTs=1514847600
@@ -18,14 +18,17 @@ public class JsonGetter {
 
 
     public static void main(String [] args) throws IOException, ParseException {
-        JsonParser jsonParser = new JsonParser();
-        JsonGetter jsonGetter = new JsonGetter();
+        JsonParserFromFile jsonParser = new JsonParserFromFile();
+        JsonGetterFromWeb jsonGetter = new JsonGetterFromWeb();
 
         jsonParser.emptyFile("data/tendancesInput.txt");
         jsonParser.emptyFile("data/tendancesOutput.txt");
 
         int  nbSlides= 25;//limite max -> 25 fenetres
         for(int stepInPast = 1 ; stepInPast < nbSlides; stepInPast++){
+
+
+            //TODO -> apartir de mes datas
 
             jsonGetter.writeJsonToFile(stepInPast);
             jsonParser.write1LineInTendances();
@@ -52,8 +55,8 @@ public class JsonGetter {
             // parse Json
             String jsonBody = result.toString();
 
-            JsonParser.emptyFile(JsonParser.pathnameBTC);
-            JsonParser.writeToFile(jsonBody, JsonParser.pathnameBTC);
+            JsonParserFromFile.emptyFile(JsonParserFromFile.pathnameBTC);
+            JsonParserFromFile.writeToFile(jsonBody, JsonParserFromFile.pathnameBTC);
         } catch (Exception e ){
             e.printStackTrace();
         }

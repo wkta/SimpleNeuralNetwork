@@ -1,7 +1,7 @@
-package com.jlmd.simpleneuralnetwork;
+package com.jlmd.simpleneuralnetwork.only_prix;
 
-import com.jlmd.simpleneuralnetwork.model.Currency;
-import com.jlmd.simpleneuralnetwork.model.Hour;
+import com.jlmd.simpleneuralnetwork.only_prix.model.Currency;
+import com.jlmd.simpleneuralnetwork.only_prix.model.Hour;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
@@ -12,7 +12,7 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 
-public class JsonParser {
+public class JsonParserFromFile {
 
 
     //https://quantquote.com/historical-stock-data
@@ -32,10 +32,10 @@ public class JsonParser {
     //        2) ouv + close + min + max + volume + diff mme + diff bollinger  par heure
 
     public static void main(String [] args) throws IOException, ParseException {
-        JsonParser jsonParser = new JsonParser();
+        JsonParserFromFile jsonParser = new JsonParserFromFile();
 
-        JsonParser.emptyFile("data/tendancesInput.txt");
-        JsonParser.emptyFile("data/tendancesOutput.txt");
+        JsonParserFromFile.emptyFile("data/tendancesInput.txt");
+        JsonParserFromFile.emptyFile("data/tendancesOutput.txt");
         jsonParser.write1LineInTendances();
 
     }
@@ -47,9 +47,9 @@ public class JsonParser {
         String inputValues="";
         for(int i =0; i < 85; i++){
             if(i < 84) {
-                inputValues += normalise(btc.hours.get(i).close) + ",";
+                inputValues += normalise(minBTC, maxBTC, btc.hours.get(i).close) + ",";
             } else {
-                inputValues += normalise(btc.hours.get(i).close);
+                inputValues += normalise(minBTC, maxBTC, btc.hours.get(i).close);
             }
         }
         writeToFile(inputValues, "data/tendancesInput.txt");
@@ -68,14 +68,14 @@ public class JsonParser {
     }
 
 
-    private String normalise(double close) {
+    public static String normalise(double minBTC, double maxBTC,double close) {
         double diff = maxBTC - minBTC;
         double res= (close - minBTC) / diff;
         res = (res * 2) - 1;
         return arrondi5Dec(res) + "";
     }
 
-    private double arrondi5Dec(double res) {
+    private static double arrondi5Dec(double res) {
         DecimalFormat df = new DecimalFormat("#.#####");
         df.setRoundingMode(RoundingMode.HALF_UP);
         return Double.parseDouble(df.format(res).replaceAll(",","."));
