@@ -1,10 +1,12 @@
 package com.jlmd.simpleneuralnetwork.neuralnetwork.parser.result;
 
+import java.io.Serializable;
+
 /**
  * Result parser interface
  * @author jlmd
  */
-public interface IResultParser<T> {
+public interface IResultParser<T> extends Serializable{
     /**
      * This method should calculate the count the number successes and return it
      * @param success Actually count of successes

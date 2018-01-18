@@ -3,27 +3,28 @@ package com.jlmd.simpleneuralnetwork.prix_volume;
 
 import com.jlmd.simpleneuralnetwork.only_prix.JsonParserFromFile;
 import com.jlmd.simpleneuralnetwork.prix_volume.model.HeureInterval;
+import com.jlmd.simpleneuralnetwork.prix_volume.model.LigneNormalisée;
 import com.jlmd.simpleneuralnetwork.prix_volume.model.Transac;
-import org.json.simple.parser.ParseException;
 
 import java.io.*;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
 public class InputWriterFromTransacFiles {
 
-
-    int sizeInputData = 30;
-    int sizeAfterBuy = 5;
-    int nbLigneInTest = 30;
+    String sico = "1rPCAP";
+    int sizeInputData = 40;
+    int sizeAfterBuy = 60;
+    int nbLigneInTest = 50;
     static String inputTrainPath = "data/tendancesInputPrixVolumeTrain.txt";
     static String outputTrainPath = "data/tendancesOutputPrixVolumeTrain.txt";
     static String inputTestPath = "data/tendancesInputPrixVolumeTest.txt";
     static String outputTestPath = "data/tendancesOutputPrixVolumeTest.txt";
 
-    public static void main(String [] args) throws IOException, ParseException {
+    public static void main(String [] args) {
 
         InputWriterFromTransacFiles inputWriterFromTransacFiles = new InputWriterFromTransacFiles();
 
@@ -33,10 +34,10 @@ public class InputWriterFromTransacFiles {
         JsonParserFromFile.emptyFile(inputTestPath);
         JsonParserFromFile.emptyFile(outputTestPath);
 
-        inputWriterFromTransacFiles.write1LineInTendances();
+        inputWriterFromTransacFiles.writeLinesInTendances();
     }
 
-    public void write1LineInTendances() throws IOException, ParseException {
+    public void writeLinesInTendances()  {
 
         //itere sur tous les jours, 2 fenetres par jour ->
         // 11h-> 11h30   -> prends les 30 a partir de heure debut
@@ -47,13 +48,10 @@ public class InputWriterFromTransacFiles {
 
         List<HeureInterval> heuresInterval = getHeuresInterval();
 
-        String sico = "1rPCAP";
+        List<LigneNormalisée> ligneNormalisées = new ArrayList<>();
 
-        int nbLigne = 0;
         for(String jour : listJours) {
-
             for(HeureInterval heureInterval : heuresInterval){
-
                 List<Transac> transacs = getTransacs(sico , jour, path, heureInterval);
                 if(transacs!= null &&  transacs.size() == sizeInputData + sizeAfterBuy){
 
@@ -75,15 +73,12 @@ public class InputWriterFromTransacFiles {
                         }
                     }
 
-                    if(nbLigne > nbLigneInTest) {
-                        JsonParserFromFile.writeToFile(inputValues, inputTrainPath);
-                    } else{
-                        JsonParserFromFile.writeToFile(inputValues, inputTestPath);
-                    }
+                    LigneNormalisée ligne = new LigneNormalisée();
+                    ligne.input = inputValues;
 
                     // met 0 ou 1 dans output.txt selon prix sur 5 minutes suivantes >  transacs.get(sizeInputData - 1 ).prix + 2%
                     int isGainMaxAtteint = 0;
-                    double targetPriceForGain = transacs.get(sizeInputData - 2).prix + (transacs.get(sizeInputData - 2).prix * 0.0005);
+                    double targetPriceForGain = transacs.get(sizeInputData - 2).prix + (transacs.get(sizeInputData - 2).prix * 0.0025);
                     for (int i = sizeInputData - 1; i < sizeInputData + sizeAfterBuy - 1; i++) {
                         if (transacs.get(i).prix  > targetPriceForGain) {
                             //gain max attends dans les 5 vals suivantes
@@ -92,13 +87,8 @@ public class InputWriterFromTransacFiles {
                         }
                     }
 
-                    if(nbLigne > nbLigneInTest) {
-                        JsonParserFromFile.writeToFile(isGainMaxAtteint + "", outputTrainPath);
-                    } else {
-
-                        System.out.println(isGainMaxAtteint);
-                        JsonParserFromFile.writeToFile(isGainMaxAtteint + "", outputTestPath);
-                    }
+                    ligne.output = isGainMaxAtteint+"";
+                    ligneNormalisées.add(ligne);
 
                 }else {
                     if(transacs == null){
@@ -107,11 +97,34 @@ public class InputWriterFromTransacFiles {
 //                    else {
 //                        System.out.println(" < "+sizeInputData+" le : " + path +" " + jour  + " " + sico +"     " + transacs.size());
 //                    }
-
                 }
-
-                nbLigne++;
             }
+        }
+
+        Collections.shuffle(ligneNormalisées);
+
+        writeLignes(ligneNormalisées);
+
+        System.out.println("fertish");
+    }
+
+    private void writeLignes(List<LigneNormalisée> ligneNormalisées) {
+
+        int nbLigne = 0;
+        for(LigneNormalisée ligneNormalisée : ligneNormalisées) {
+            if(nbLigne > nbLigneInTest) {
+                JsonParserFromFile.writeToFile(ligneNormalisée.input, inputTrainPath);
+            } else{
+                JsonParserFromFile.writeToFile(ligneNormalisée.input, inputTestPath);
+            }
+
+            if(nbLigne > nbLigneInTest) {
+                JsonParserFromFile.writeToFile(ligneNormalisée.output, outputTrainPath);
+            } else {
+                System.out.println(ligneNormalisée.output);
+                JsonParserFromFile.writeToFile(ligneNormalisée.output , outputTestPath);
+            }
+            nbLigne++;
         }
     }
 
@@ -179,28 +192,28 @@ public class InputWriterFromTransacFiles {
     public List<HeureInterval> getHeuresInterval() {
         List<HeureInterval> heuresInterval = new ArrayList<>();
 
-        HeureInterval heureInterval1 = new HeureInterval();
-        heureInterval1.heureDebut = heureToDate("11:00:00");
-//        heureInterval1.heureFin = heureToDate("11:30:00");
-        heuresInterval.add(heureInterval1);
-
-        HeureInterval heureInterval3 = new HeureInterval();
-        heureInterval3.heureDebut = heureToDate("12:00:00");
-//        heureInterval1.heureFin = heureToDate("11:30:00");
-        heuresInterval.add(heureInterval3);
-
-
-        HeureInterval heureInterval2 = new HeureInterval();
-        heureInterval2.heureDebut = heureToDate("13:00:00");
-//        heureInterval2.heureFin = heureToDate("14:30:00");
-        heuresInterval.add(heureInterval2);
-
-        HeureInterval heureInterval4 = new HeureInterval();
-        heureInterval4.heureDebut = heureToDate("14:00:00");
-//        heureInterval1.heureFin = heureToDate("11:30:00");
-        heuresInterval.add(heureInterval4);
+        //toutes les 10 mins
+        int h = 10;
+        int m =0;
+        while(h <= 16){
+            m=0;
+            while(m <= 6){
+                addHour(heuresInterval, h+":"+m+"0:00");
+                if(h == 16 && m ==0){
+                    break;
+                }
+                m++;
+            }
+            h++;
+        }
 
         return heuresInterval;
+    }
+
+    private void addHour(List<HeureInterval> heuresInterval, String s) {
+        HeureInterval heureInterval0 = new HeureInterval();
+        heureInterval0.heureDebut = heureToDate(s);
+        heuresInterval.add(heureInterval0);
     }
 
     public static Date heureToDate(String h) {
